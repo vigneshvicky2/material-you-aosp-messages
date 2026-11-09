@@ -40,6 +40,9 @@ import androidx.navigation.navArgument
 import com.rodin.messages.data.Prefs
 import com.rodin.messages.notify.Notifier
 import com.rodin.messages.ui.MainViewModel
+import com.rodin.messages.finance.Cat
+import com.rodin.messages.ui.money.MoneyViewModel
+import com.rodin.messages.ui.money.TransactionsScreen
 import com.rodin.messages.ui.ThreadViewModel
 import com.rodin.messages.ui.components.LocalSharedScope
 import com.rodin.messages.ui.components.ProvideAnimScope
@@ -119,6 +122,7 @@ private fun AppNav(vm: MainViewModel, intent: Intent?, onIntentHandled: () -> Un
     val prefill = androidx.compose.runtime.remember { mutableStateOf(Prefill()) }
     val settings by vm.prefs.settings.collectAsState()
     val isDefault by vm.isDefault.collectAsState()
+    val moneyVm: MoneyViewModel = viewModel()
 
     // ---- incoming intents
     LaunchedEffect(intent) {
@@ -166,6 +170,8 @@ private fun AppNav(vm: MainViewModel, intent: Intent?, onIntentHandled: () -> Un
                 composable("home") {
                     ProvideAnimScope(this) {
                         HomeScreen(
+                            moneyVm = moneyVm,
+                            onMoneySeeAll = { cat -> nav.navigate("transactions?cat=${cat?.name ?: ""}") },
                             vm = vm,
                             onOpen = { c -> nav.openThread(c.threadId, c.addresses) },
                             onOpenThreadId = { id, a -> nav.openThread(id, a) },
@@ -175,6 +181,13 @@ private fun AppNav(vm: MainViewModel, intent: Intent?, onIntentHandled: () -> Un
                             onRequestDefault = onRequestDefault,
                         )
                     }
+                }
+                composable(
+                    "transactions?cat={cat}",
+                    arguments = listOf(navArgument("cat") { type = NavType.StringType; defaultValue = "" }),
+                ) { entry ->
+                    val cat = entry.arguments?.getString("cat")?.let { c -> Cat.entries.firstOrNull { it.name == c } }
+                    ProvideAnimScope(this) { TransactionsScreen(moneyVm, cat, onBack = { nav.popBackStack() }) }
                 }
                 composable("search") {
                     ProvideAnimScope(this) {

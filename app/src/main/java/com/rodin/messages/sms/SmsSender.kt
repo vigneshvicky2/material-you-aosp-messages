@@ -144,7 +144,13 @@ class SmsDeliverReceiver : BroadcastReceiver() {
                 msgs.groupBy { it.displayOriginatingAddress ?: "" }.forEach { (addr, parts) ->
                     val body = parts.joinToString("") { it.displayMessageBody ?: "" }
                     val repo = SmsRepo.get(ctx)
-                    repo.insertIncomingSms(addr, body, parts[0].timestampMillis, subId, parts[0].serviceCenterAddress)
+                    val uri = repo.insertIncomingSms(addr, body, parts[0].timestampMillis, subId, parts[0].serviceCenterAddress)
+                    // Feed the finance tracker before notifying, so it never misses a bank alert
+                    uri?.lastPathSegment?.toLongOrNull()?.let { id ->
+                        runCatching {
+                            com.rodin.messages.finance.FinanceRepo.get(ctx).ingest(id, addr, body, System.currentTimeMillis())
+                        }
+                    }
                     Notifier.notifyIncoming(ctx, addr)
                 }
             } finally {

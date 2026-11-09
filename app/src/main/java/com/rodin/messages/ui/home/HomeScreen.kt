@@ -110,6 +110,12 @@ import com.rodin.messages.data.Conversation
 import com.rodin.messages.data.SimInfo
 import com.rodin.messages.data.SwipeAction
 import com.rodin.messages.ui.MainViewModel
+import com.rodin.messages.finance.Cat
+import com.rodin.messages.finance.Txn
+import com.rodin.messages.ui.money.MoneyViewModel
+import com.rodin.messages.ui.money.TxnSheet
+import com.rodin.messages.ui.money.moneyTab
+import androidx.compose.material.icons.rounded.AccountBalanceWallet
 import com.rodin.messages.ui.components.Avatar
 import com.rodin.messages.ui.components.BigHeader
 import com.rodin.messages.ui.components.ChipRow
@@ -125,7 +131,7 @@ import com.rodin.messages.ui.components.groupShape
 import com.rodin.messages.ui.components.sharedKey
 import kotlinx.coroutines.delay
 
-private enum class ChatFilter(val label: String) { ALL("All"), UNREAD("Unread"), PERSONAL("Contacts"), ARCHIVED("Archived") }
+private enum class ChatFilter(val label: String) { ALL("All"), UNREAD("Unread"), PERSONAL("Contacts"), STARRED("Starred"), ARCHIVED("Archived") }
 private enum class UpdateFilter(val label: String, val cats: Set<Category>) {
     ALL("All", setOf(Category.OTP, Category.TRANSACTION, Category.PROMOTION, Category.GOVERNMENT)),
     OTP("OTP", setOf(Category.OTP)),
@@ -143,8 +149,12 @@ fun HomeScreen(
     onSettings: () -> Unit,
     onSearch: () -> Unit,
     onRequestDefault: () -> Unit,
+    moneyVm: MoneyViewModel,
+    onMoneySeeAll: (Cat?) -> Unit,
 ) {
     val convs by vm.conversations.collectAsState()
+    val money by moneyVm.state.collectAsState()
+    var txnSheet by remember { mutableStateOf<Txn?>(null) }
     val loaded by vm.loaded.collectAsState()
     val isDefault by vm.isDefault.collectAsState()
     val sims by vm.sims.collectAsState()
@@ -159,7 +169,7 @@ fun HomeScreen(
     val tabs = listOf(
         NavItem("Chats", Icons.AutoMirrored.Rounded.Chat, unreadPersonal),
         NavItem("Updates", Icons.AutoMirrored.Rounded.ReceiptLong, unreadUpdates),
-        NavItem("Starred", Icons.Rounded.Star),
+        NavItem("Money", Icons.Rounded.AccountBalanceWallet),
         NavItem("Contacts", Icons.Rounded.People),
         NavItem("Spam", Icons.Rounded.Report),
     )
@@ -187,8 +197,10 @@ fun HomeScreen(
                         BigHeader("Messages", tabs[t].label) {
                             CircleIconButton(Icons.Rounded.Settings, "Settings", Modifier.padding(top = 6.dp), onSettings)
                         }
-                        Spacer(Modifier.height(18.dp))
-                        SearchPill("Search messages or people", Modifier.padding(horizontal = 20.dp), onSearch)
+                        if (t != 2) {
+                            Spacer(Modifier.height(18.dp))
+                            SearchPill("Search messages or people", Modifier.padding(horizontal = 20.dp), onSearch)
+                        }
                     }
                 }
                 item(key = "banner") {
@@ -197,9 +209,9 @@ fun HomeScreen(
                     }
                 }
                 when (t) {
-                    0 -> chatsTab(chatFilter, { chatFilter = it }, convs, loaded, sims, settings.swipeLeft, settings.swipeRight, vm, onOpen) { sheetFor = it }
+                    0 -> chatsTab(chatFilter, { chatFilter = it }, convs, loaded, sims, settings.swipeLeft, settings.swipeRight, vm, onOpen, onOpenThreadId) { sheetFor = it }
                     1 -> updatesTab(updFilter, { updFilter = it }, convs, loaded, sims, settings.swipeLeft, settings.swipeRight, vm, onOpen) { sheetFor = it }
-                    2 -> starredTab(vm, onOpenThreadId)
+                    2 -> moneyTab(money, moneyVm, onMoneySeeAll) { txnSheet = it }
                     3 -> contactsTab(vm, onNewChat) { c -> vm.threadFor(listOf(c.number)) { onOpenThreadId(it, listOf(c.number)) } }
                     4 -> spamTab(convs, sims, vm, onOpen, onSettings) { sheetFor = it }
                 }
@@ -209,7 +221,7 @@ fun HomeScreen(
         // Floating action button (Dialer's round dialpad button → compose)
         StartChatFab(
             expanded = atTop,
-            visible = tab != 3,
+            visible = tab != 3 && tab != 2,
             modifier = Modifier.align(Alignment.BottomEnd).navigationBarsPadding().padding(end = 20.dp, bottom = 104.dp),
             onClick = onNewChat,
         )
@@ -224,6 +236,7 @@ fun HomeScreen(
     sheetFor?.let { c ->
         ConversationSheet(c, vm, onDismiss = { sheetFor = null })
     }
+    txnSheet?.let { t -> TxnSheet(t, moneyVm) { txnSheet = null } }
 }
 
 // ============================================================ tabs
@@ -254,7 +267,7 @@ private fun LazyListScope.chatsTab(
     f: ChatFilter, setF: (ChatFilter) -> Unit,
     convs: List<Conversation>, loaded: Boolean, sims: List<SimInfo>,
     left: SwipeAction, right: SwipeAction, vm: MainViewModel,
-    onOpen: (Conversation) -> Unit, onLong: (Conversation) -> Unit,
+    onOpen: (Conversation) -> Unit, onOpenThreadId: (Long, List<String>) -> Unit, onLong: (Conversation) -> Unit,
 ) {
     item(key = "chips_chats") {
         Column {
@@ -263,12 +276,14 @@ private fun LazyListScope.chatsTab(
                 badge = { if (it == ChatFilter.UNREAD) convs.count { c -> c.unreadCount > 0 && c.category == Category.PERSONAL && !c.archived } else 0 }) { setF(it) }
         }
     }
+    if (f == ChatFilter.STARRED) { starredTab(vm, onOpenThreadId); return }
     val base = convs.filter { it.category == Category.PERSONAL }
     val shown = when (f) {
         ChatFilter.ALL -> base.filter { !it.archived && !it.pinned }
         ChatFilter.UNREAD -> base.filter { !it.archived && it.unreadCount > 0 }
         ChatFilter.PERSONAL -> base.filter { !it.archived && it.contacts.any { c -> c.lookupKey != null } }
         ChatFilter.ARCHIVED -> convs.filter { it.archived }
+        ChatFilter.STARRED -> emptyList()
     }
     val pinned = convs.filter { it.pinned && !it.archived }
     if (f == ChatFilter.ALL && pinned.isNotEmpty()) {
