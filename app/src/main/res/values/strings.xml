@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">Messages</string>
+    <string name="upi_capture_label">Messages · UPI payment tracker</string>
+    <string name="upi_capture_desc">Records payments you complete in Google Pay and super.money (amount, payee, UPI reference, bank) into your Money tab, including UPI Lite payments that never get a bank SMS. Only these two apps are read, only completed-payment screens are saved, PIN entry is never visible, and nothing leaves your phone.</string>
 </resources>

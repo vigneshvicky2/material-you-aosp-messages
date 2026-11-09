@@ -12,7 +12,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import java.util.Calendar
 
-private class FinanceDb(ctx: Context) : SQLiteOpenHelper(ctx, "finance.db", null, 1) {
+private class FinanceDb(ctx: Context) : SQLiteOpenHelper(ctx, "finance.db", null, 2) {
     override fun onCreate(db: SQLiteDatabase) {
         db.execSQL(
             """CREATE TABLE txns(
@@ -25,7 +25,8 @@ private class FinanceDb(ctx: Context) : SQLiteOpenHelper(ctx, "finance.db", null
                 ts INTEGER NOT NULL, category TEXT NOT NULL, note TEXT,
                 excluded INTEGER NOT NULL DEFAULT 0, dup_of INTEGER, failed INTEGER NOT NULL DEFAULT 0,
                 confidence REAL NOT NULL DEFAULT 0, body TEXT NOT NULL, manual INTEGER NOT NULL DEFAULT 0,
-                cat_locked INTEGER NOT NULL DEFAULT 0)""",
+                cat_locked INTEGER NOT NULL DEFAULT 0,
+                source TEXT NOT NULL DEFAULT 'SMS')""",
         )
         db.execSQL("CREATE INDEX idx_txns_ts ON txns(ts)")
         db.execSQL("CREATE INDEX idx_txns_ref ON txns(ref)")
@@ -33,7 +34,9 @@ private class FinanceDb(ctx: Context) : SQLiteOpenHelper(ctx, "finance.db", null
         db.execSQL("CREATE TABLE meta(k TEXT PRIMARY KEY, v TEXT)")
     }
 
-    override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) = Unit
+    override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
+        if (oldVersion < 2) db.execSQL("ALTER TABLE txns ADD COLUMN source TEXT NOT NULL DEFAULT 'SMS'")
+    }
 }
 
 data class AccountSummary(val bank: String?, val account: String, val balancePaise: Long?, val balanceTime: Long?, val txnCount: Int)
@@ -155,6 +158,93 @@ class FinanceRepo private constructor(private val ctx: Context) {
         }
         val id = w.insertWithOnConflict("txns", null, v, SQLiteDatabase.CONFLICT_IGNORE)
         if (id > 0 && dup == null && !p.failed) markSelfTransfer(w, id, p, time)
+        if (id > 0 && dup != null) {
+            // Same payment already known (e.g. from the GPay screen): add what only the SMS knows.
+            fillMissing(w, dup, "balance" to p.balancePaise, "account" to p.account, "bank" to p.bank, "ref" to p.ref)
+        }
+        return id > 0
+    }
+
+    private fun fillMissing(w: SQLiteDatabase, id: Long, vararg fields: Pair<String, Any?>) {
+        fields.forEach { (col, value) ->
+            if (value == null) return@forEach
+            val v = ContentValues().apply {
+                when (value) {
+                    is Long -> put(col, value)
+                    is String -> put(col, value)
+                    else -> put(col, value.toString())
+                }
+            }
+            w.update("txns", v, "id=? AND $col IS NULL", arrayOf(id.toString()))
+        }
+    }
+
+    /**
+     * Records a payment read from a UPI app's success/details screen.
+     * If the same payment is already known (bank SMS, or the screen was opened before), it is merged instead.
+     * Returns true when a new transaction was added.
+     */
+    fun ingestScreen(t: ScreenTxn, pkg: String): Boolean {
+        val w = db.writableDatabase
+        val time = t.time ?: System.currentTimeMillis()
+        val dir = if (t.direction == Direction.CREDIT) 1 else -1
+        val existing: Long? = run {
+            if (t.ref != null) {
+                w.rawQuery("SELECT id FROM txns WHERE ref=? AND dup_of IS NULL LIMIT 1", arrayOf(t.ref))
+                    .use { if (it.moveToFirst()) return@run it.getLong(0) }
+            }
+            w.rawQuery(
+                "SELECT id FROM txns WHERE amount=? AND dir=? AND dup_of IS NULL AND ts BETWEEN ? AND ? ORDER BY ABS(ts-?) LIMIT 1",
+                arrayOf(t.amountPaise.toString(), dir.toString(), (time - 300_000).toString(), (time + 300_000).toString(), time.toString()),
+            ).use { if (it.moveToFirst()) it.getLong(0) else null }
+        }
+        if (existing != null) {
+            // The app screen knows the real payee name; the SMS often only has a VPA or a code.
+            t.payee?.let { name ->
+                w.update("txns", ContentValues().apply { put("counterparty", name) },
+                    "id=? AND (counterparty IS NULL OR source='SMS')", arrayOf(existing.toString()))
+            }
+            fillMissing(w, existing, "vpa" to t.vpa, "ref" to t.ref, "account" to t.account, "bank" to t.bank)
+            bump()
+            return false
+        }
+        val parsed = ParsedTxn(
+            amountPaise = t.amountPaise, direction = t.direction, channel = Channel.UPI,
+            bank = if (t.upiLite) "UPI Lite" else t.bank, account = t.account, counterparty = t.payee, vpa = t.vpa,
+            ref = t.ref, balancePaise = null, confidence = if (t.ref != null) 0.95f else 0.8f,
+        )
+        val app = UpiCaptureService.appName(pkg)
+        val body = buildString {
+            append(if (t.direction == Direction.DEBIT) "Paid " else "Received ")
+            append(formatRupees(t.amountPaise, decimals = true))
+            append(if (t.direction == Direction.DEBIT) " to " else " from ")
+            append(t.payee ?: t.vpa ?: "unknown")
+            if (t.vpa != null && t.payee != null) append(" (${t.vpa})")
+            append(" in $app")
+            if (t.upiLite) append(" using UPI Lite")
+            t.ref?.let { append(". UPI ref $it") }
+        }
+        val cat = Categorizer.categorize(parsed, body, rules(), ::isContact)
+        val v = ContentValues().apply {
+            putNull("sms_id")
+            put("sender", app)
+            put("bank", parsed.bank)
+            put("account", parsed.account)
+            put("amount", parsed.amountPaise)
+            put("dir", dir)
+            put("channel", parsed.channel.name)
+            put("counterparty", parsed.counterparty)
+            put("vpa", parsed.vpa)
+            put("ref", parsed.ref)
+            putNull("balance")
+            put("ts", time)
+            put("category", cat.name)
+            put("confidence", parsed.confidence)
+            put("body", body)
+            put("source", Source.SCREEN.name)
+        }
+        val id = w.insert("txns", null, v)
+        if (id > 0) bump()
         return id > 0
     }
 
@@ -170,7 +260,7 @@ class FinanceRepo private constructor(private val ctx: Context) {
         }
         w.rawQuery(
             "SELECT id, account, ref FROM txns WHERE amount=? AND dir=? AND dup_of IS NULL AND ts BETWEEN ? AND ? LIMIT 5",
-            arrayOf(p.amountPaise.toString(), dir.toString(), (time - 180_000).toString(), (time + 180_000).toString()),
+            arrayOf(p.amountPaise.toString(), dir.toString(), (time - 300_000).toString(), (time + 300_000).toString()),
         ).use { c ->
             while (c.moveToNext()) {
                 val acc = c.getString(1)
@@ -223,6 +313,7 @@ class FinanceRepo private constructor(private val ctx: Context) {
         confidence = getFloat(getColumnIndexOrThrow("confidence")),
         body = getString(getColumnIndexOrThrow("body")),
         manual = getInt(getColumnIndexOrThrow("manual")) != 0,
+        source = runCatching { Source.valueOf(getString(getColumnIndexOrThrow("source"))) }.getOrDefault(Source.SMS),
     )
 
     private fun query(where: String, args: Array<String>, order: String = "ts DESC", limit: String? = null): List<Txn> {

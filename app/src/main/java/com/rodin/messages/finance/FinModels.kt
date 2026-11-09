@@ -4,6 +4,9 @@ package com.rodin.messages.finance
 
 enum class Direction { DEBIT, CREDIT }
 
+/** Where a transaction was captured from. */
+enum class Source(val label: String) { SMS("Bank SMS"), SCREEN("Payment app screen"), MANUAL("Added by you"), SAMPLE("Sample") }
+
 enum class Channel(val label: String) {
     UPI("UPI"), CARD("Card"), ATM("ATM"), NEFT("NEFT"), IMPS("IMPS"), RTGS("RTGS"),
     AUTOPAY("AutoPay"), NETBANKING("Net banking"), WALLET("Wallet"), OTHER("Bank"),
@@ -68,6 +71,7 @@ data class Txn(
     val confidence: Float,
     val body: String,
     val manual: Boolean,
+    val source: Source = Source.SMS,
 ) {
     val signedPaise: Long get() = if (direction == Direction.CREDIT) amountPaise else -amountPaise
     val title: String get() = counterparty ?: vpa ?: channel.label

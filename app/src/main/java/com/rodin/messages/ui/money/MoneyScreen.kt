@@ -44,6 +44,9 @@ import androidx.compose.material.icons.rounded.ArrowDownward
 import androidx.compose.material.icons.rounded.ArrowUpward
 import androidx.compose.material.icons.rounded.HelpOutline
 import androidx.compose.material.icons.rounded.Sms
+import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.QrCodeScanner
+import androidx.compose.animation.animateContentSize
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
@@ -99,6 +102,13 @@ fun LazyListScope.moneyTab(
                 }
             }
         }
+    }
+    item(key = "m_upi") {
+        androidx.lifecycle.compose.LifecycleResumeEffect(Unit) {
+            vm.refreshCapture()
+            onPauseOrDispose { }
+        }
+        UpiTrackerCard(s.upiCaptureOn, s.upiLearning, vm)
     }
     item(key = "m_month") { MonthSwitcher(s.monthLabel, s.monthOffset < 0, vm::shiftMonth) }
     item(key = "m_import") {
@@ -194,6 +204,50 @@ fun LazyListScope.moneyTab(
     val recent = s.monthTxns.take(8)
     recent.forEachIndexed { i, t ->
         item(key = "m_t_${t.id}") { TxnRow(t, groupShape(i, recent.size), Modifier.animateItem()) { onTxn(t) } }
+    }
+}
+
+@Composable
+private fun UpiTrackerCard(on: Boolean, learning: Boolean, vm: MoneyViewModel) {
+    val ctx = LocalContext.current
+    var expanded by remember { mutableStateOf(false) }
+    val bg by animateColorAsState(
+        if (on) MaterialTheme.colorScheme.surfaceContainer else MaterialTheme.colorScheme.secondaryContainer, label = "u")
+    Surface(
+        onClick = { if (on) expanded = !expanded else ctx.startActivity(android.content.Intent(android.provider.Settings.ACTION_ACCESSIBILITY_SETTINGS)) },
+        shape = RoundedCornerShape(24.dp), color = bg,
+        modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 12.dp),
+    ) {
+        Column(Modifier.padding(18.dp).animateContentSize()) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(Modifier.size(40.dp).clip(RoundedCornerShape(13.dp))
+                    .background(if (on) CreditGreen.copy(alpha = 0.2f) else MaterialTheme.colorScheme.primary),
+                    contentAlignment = Alignment.Center) {
+                    Icon(if (on) Icons.Rounded.CheckCircle else Icons.Rounded.QrCodeScanner, null,
+                        tint = if (on) CreditGreen else MaterialTheme.colorScheme.onPrimary)
+                }
+                Spacer(Modifier.width(14.dp))
+                Column(Modifier.weight(1f)) {
+                    Text(if (on) "Tracking GPay & super.money" else "Track GPay & super.money payments",
+                        style = MaterialTheme.typography.titleSmall)
+                    Text(
+                        if (on) "Payments you complete in these apps are added automatically"
+                        else "Catches UPI Lite and payments without a bank SMS. Tap, then open Messages · UPI payment tracker and turn it on.",
+                        style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+            AnimatedVisibility(on && expanded) {
+                Row(Modifier.fillMaxWidth().padding(top = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text("Learning mode", style = MaterialTheme.typography.bodyLarge)
+                        Text("Logs payment screens locally (adb logcat) so new layouts can be supported. Turn off when done.",
+                            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    Switch(learning, { vm.setLearning(it) })
+                }
+            }
+        }
     }
 }
 
@@ -420,7 +474,11 @@ fun TxnSheet(t: Txn, vm: MoneyViewModel, onDismiss: () -> Unit) {
                     t.vpa?.let { "UPI ID" to it },
                     t.ref?.let { "Reference" to it },
                     t.balancePaise?.let { "Balance after" to formatRupees(it, decimals = true) },
-                    "From SMS" to t.sender,
+                    "Captured from" to when (t.source) {
+                        com.rodin.messages.finance.Source.SCREEN -> "${t.sender} screen"
+                        com.rodin.messages.finance.Source.SMS -> "Bank SMS · ${t.sender}"
+                        else -> t.source.label
+                    },
                 ),
             )
 

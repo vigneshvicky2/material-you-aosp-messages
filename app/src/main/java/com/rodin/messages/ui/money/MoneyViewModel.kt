@@ -12,6 +12,7 @@ import com.rodin.messages.finance.Cat
 import com.rodin.messages.finance.FinanceRepo
 import com.rodin.messages.finance.MonthSummary
 import com.rodin.messages.finance.SampleData
+import com.rodin.messages.finance.UpiCaptureService
 import com.rodin.messages.finance.Txn
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
@@ -40,6 +41,8 @@ data class MoneyState(
     val accounts: List<AccountSummary> = emptyList(),
     val todayIndex: Int = -1,
     val sample: Boolean = false,
+    val upiCaptureOn: Boolean = false,
+    val upiLearning: Boolean = false,
 )
 
 class MoneyViewModel(app: Application) : AndroidViewModel(app) {
@@ -119,6 +122,20 @@ class MoneyViewModel(app: Application) : AndroidViewModel(app) {
         sampleCache.replaceAll { _, list -> list.map { if (it.id == t.id) change(it) else it } }
         viewModelScope.launch { reload() }
         return true
+    }
+
+    /** Re-check whether the UPI tracker (accessibility service) is switched on, e.g. after returning from Settings. */
+    fun refreshCapture() {
+        val app = getApplication<Application>()
+        _state.value = _state.value.copy(
+            upiCaptureOn = UpiCaptureService.isEnabled(app),
+            upiLearning = UpiCaptureService.learning(app),
+        )
+    }
+
+    fun setLearning(on: Boolean) {
+        UpiCaptureService.setLearning(getApplication(), on)
+        refreshCapture()
     }
 
     fun shiftMonth(delta: Int) {
