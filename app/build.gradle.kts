@@ -1,7 +1,19 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.compose")
+}
+
+// Release signing key lives outside the repo (never committed). Point MESSAGES_SIGNING at a
+// properties file with storeFile/storePassword/keyAlias/keyPassword, or use the default location.
+// Without it, release builds fall back to the local debug key so anyone can still build.
+val signingProps = Properties().also { props ->
+    val path = System.getenv("MESSAGES_SIGNING")
+        ?: "${System.getProperty("user.home")}/.android-keys/material-you-messages.properties"
+    val f = file(path)
+    if (f.exists()) f.inputStream().use { props.load(it) }
 }
 
 android {
@@ -13,7 +25,18 @@ android {
         minSdk = 31
         targetSdk = 36
         versionCode = 1
-        versionName = "1.0"
+        versionName = "1.0.0"
+    }
+
+    signingConfigs {
+        if (signingProps.isNotEmpty()) {
+            create("release") {
+                storeFile = file(signingProps.getProperty("storeFile"))
+                storePassword = signingProps.getProperty("storePassword")
+                keyAlias = signingProps.getProperty("keyAlias")
+                keyPassword = signingProps.getProperty("keyPassword")
+            }
+        }
     }
 
     buildTypes {
@@ -21,7 +44,7 @@ android {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.findByName("release") ?: signingConfigs.getByName("debug")
         }
     }
     compileOptions {
