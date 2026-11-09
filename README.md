@@ -142,6 +142,35 @@ keytool -genkeypair -v -keystore my-release.jks -alias messages -keyalg RSA -key
 
 If no signing file is found, release builds fall back to your local debug key so the project always builds. **Never commit keystores or passwords** — `*.jks`, `*.keystore` and `local.properties` are git-ignored.
 
+### Shipping in a custom ROM
+
+ROM maintainers (LineageOS-based ROMs, Lunaris, crDroid, …) can include Messages as the built-in SMS app, replacing AOSP Messaging. Ready-made templates are in [`rom-integration/`](rom-integration/):
+
+| File | What it does |
+|---|---|
+| [`Android.bp`](rom-integration/Android.bp) | `android_app_import` of the release APK, kept **presigned**, `overrides: ["messaging"]` to drop AOSP Messaging |
+| [`default-permissions-materialyou-messages.xml`](rom-integration/default-permissions-materialyou-messages.xml) | Pre-grants contacts, phone-state and notification permissions (SMS permissions come with the default-SMS role) |
+| [`overlay/`](rom-integration/overlay/) | Static RRO setting `config_defaultSms` so Messages is the default SMS app on first boot |
+
+**Steps**
+
+1. Copy `rom-integration/` into your tree, e.g. `vendor/<rom>/prebuilt/MaterialYouMessages/`.
+2. Download the latest release APK, check its SHA-256 against the release notes, and save it there as `MaterialYouMessages.apk`.
+3. Add the modules to your product makefile:
+   ```make
+   PRODUCT_PACKAGES += \
+       MaterialYouMessages \
+       MaterialYouMessagesDefaultSmsOverlay
+   ```
+4. Build and flash. On first boot, Messages is installed in `/product/app`, set as the default SMS app, with no permission prompts.
+
+**Notes**
+
+- **Keep it presigned.** Re-signing with your platform key would stop users from installing newer GitHub releases over the ROM copy. The app needs no privileged or signature permissions, so it does not need to be a priv-app.
+- **If your ROM already overlays `config_defaultSms`** (many set it to `com.android.messaging` or Google Messages), change that existing value instead of adding the second overlay, so the two don't conflict.
+- **Prefer building it yourself?** Build the release APK from source (see *Build* above) and sign it with your own key. Users then get updates from your ROM's OTA instead of from GitHub.
+- The templates follow standard Soong / AOSP conventions but have not been tested in every ROM tree. Issues and pull requests from ROM maintainers are welcome.
+
 ### Screenshot mode (debug builds only)
 
 Fills the app with realistic made-up conversations, contacts and two SIMs, and turns every write (send, delete, mark read, block) into a no-op — useful for screenshots, demos and UI work without a SIM.
@@ -158,6 +187,7 @@ Sample notifications: **Settings → Notifications → Preview notifications**. 
 ### Project structure
 
 ```
+rom-integration/               Templates for shipping Messages inside a custom ROM (see above)
 app/src/main/java/io/github/vigneshvicky2/messages/
 ├── MainActivity.kt          Navigation (Compose NavHost + shared-element transitions), intents (sms:, share), role request
 ├── BubbleActivity.kt        Compact conversation shown inside a notification bubble

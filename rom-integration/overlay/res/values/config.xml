@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Default holder of the SMS role (android.app.role.SMS). -->
+    <string name="config_defaultSms" translatable="false">io.github.vigneshvicky2.messages</string>
+</resources>

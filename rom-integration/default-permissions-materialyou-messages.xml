@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Pre-grants the runtime permissions Messages asks for on first launch.
+    SMS/MMS permissions are granted automatically by the default-SMS role.
+    fixed="false" lets users revoke them later in Settings.
+-->
+<exceptions>
+    <exception package="io.github.vigneshvicky2.messages">
+        <permission name="android.permission.READ_CONTACTS" fixed="false" />
+        <permission name="android.permission.READ_PHONE_STATE" fixed="false" />
+        <permission name="android.permission.READ_PHONE_NUMBERS" fixed="false" />
+        <permission name="android.permission.POST_NOTIFICATIONS" fixed="false" />
+    </exception>
+</exceptions>
