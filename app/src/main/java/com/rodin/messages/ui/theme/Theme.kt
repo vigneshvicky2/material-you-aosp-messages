@@ -136,6 +136,17 @@ fun MessagesTheme(mode: ThemeMode, palette: Palette, content: @Composable () -> 
         surfaceContainerHighest = anim(scheme.surfaceContainerHighest),
         onSurface = anim(scheme.onSurface),
     )
+    // Status/navigation bar icons must follow the app's chosen theme, not the system's dark mode
+    val view = androidx.compose.ui.platform.LocalView.current
+    if (!view.isInEditMode) {
+        androidx.compose.runtime.SideEffect {
+            val window = (view.context as? android.app.Activity)?.window ?: return@SideEffect
+            androidx.core.view.WindowCompat.getInsetsController(window, view).apply {
+                isAppearanceLightStatusBars = !dark
+                isAppearanceLightNavigationBars = !dark
+            }
+        }
+    }
     MaterialTheme(colorScheme = animated, typography = AppTypography, shapes = AppShapes) {
         androidx.compose.runtime.CompositionLocalProvider(
             androidx.compose.material3.LocalContentColor provides animated.onSurface,

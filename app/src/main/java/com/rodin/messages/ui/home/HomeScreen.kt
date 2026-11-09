@@ -439,7 +439,7 @@ private fun PinnedRow(pinned: List<Conversation>, onOpen: (Conversation) -> Unit
                 val ring by animateColorAsState(
                     if (c.unreadCount > 0) MaterialTheme.colorScheme.primary else Color.Transparent, tween(400), label = "r")
                 Column(
-                    Modifier.width(70.dp).animateItem().clip(RoundedCornerShape(20.dp))
+                    Modifier.width(72.dp).animateItem().clip(RoundedCornerShape(12.dp))
                         .combinedClickable(onClick = { onOpen(c) }, onLongClick = { onLong(c) }).padding(vertical = 4.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
@@ -448,7 +448,7 @@ private fun PinnedRow(pinned: List<Conversation>, onOpen: (Conversation) -> Unit
                             size = 54.dp, highlighted = c.unreadCount > 0, group = c.isGroup)
                     }
                     Spacer(Modifier.height(6.dp))
-                    Text(c.title, maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.labelMedium,
+                    Text(c.title, Modifier.padding(horizontal = 4.dp), maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.labelMedium,
                         fontWeight = if (c.unreadCount > 0) FontWeight.Bold else FontWeight.Normal)
                 }
             }
