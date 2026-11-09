@@ -7,5 +7,6 @@ class MessagesApp : Application() {
     override fun onCreate() {
         super.onCreate()
         Notifier.createChannels(this)
+        com.rodin.messages.data.Demo.init(this)
     }
 }

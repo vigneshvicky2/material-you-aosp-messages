@@ -19,6 +19,7 @@ class ContactsRepo(private val ctx: Context) {
     fun clearCache() = cache.clear()
 
     fun lookup(address: String): Contact {
+        if (Demo.on) return Demo.lookup(address) ?: Contact(Classifier.prettySender(address).takeIf { Classifier.isBusinessSender(address) }, address)
         cache[address]?.let { return it }
         var c = Contact(name = null, number = address)
         if (granted(Manifest.permission.READ_CONTACTS) && address.any { it.isDigit() }) {
@@ -55,6 +56,7 @@ class ContactsRepo(private val ctx: Context) {
 
     /** All phone contacts, sorted, deduped by normalized number. */
     fun all(): List<Contact> {
+        if (Demo.on) return Demo.contacts
         if (!granted(Manifest.permission.READ_CONTACTS)) return emptyList()
         val out = LinkedHashMap<String, Contact>()
         ctx.contentResolver.query(
@@ -82,6 +84,7 @@ class ContactsRepo(private val ctx: Context) {
 class SimRepo(private val ctx: Context) {
     @SuppressLint("MissingPermission")
     fun sims(): List<SimInfo> {
+        if (Demo.on) return Demo.sims
         if (ctx.checkSelfPermission(Manifest.permission.READ_PHONE_STATE) != PackageManager.PERMISSION_GRANTED) return emptyList()
         val sm = ctx.getSystemService(SubscriptionManager::class.java) ?: return emptyList()
         return runCatching {

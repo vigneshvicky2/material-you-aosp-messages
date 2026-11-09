@@ -18,6 +18,7 @@ class SmsRepo(private val ctx: Context) {
     val prefs = Prefs.get(ctx)
 
     fun isDefaultSmsApp(): Boolean {
+        if (Demo.on) return true
         val held = runCatching {
             ctx.getSystemService(android.app.role.RoleManager::class.java)
                 .isRoleHeld(android.app.role.RoleManager.ROLE_SMS)
@@ -46,6 +47,7 @@ class SmsRepo(private val ctx: Context) {
     }
 
     fun conversations(): List<Conversation> {
+        if (Demo.on) return Demo.conversations()
         val canon = canonicalAddresses()
         val pinned = prefs.pinned()
         val archived = prefs.archived()
@@ -120,6 +122,7 @@ class SmsRepo(private val ctx: Context) {
     fun conversation(threadId: Long): Conversation? = conversations().firstOrNull { it.threadId == threadId }
 
     fun messages(threadId: Long, limit: Int = 800): List<Message> {
+        if (Demo.on) return Demo.messages(threadId)
         val starred = prefs.starred()
         val reactions = prefs.reactions()
         val list = ArrayList<Message>()
@@ -218,6 +221,7 @@ class SmsRepo(private val ctx: Context) {
     // ---------------- writes (require default SMS role) ----------------
 
     fun markRead(threadId: Long) {
+        if (Demo.on) return
         runCatching {
             val v = ContentValues().apply { put("read", 1); put("seen", 1) }
             cr.update(Telephony.Sms.CONTENT_URI, v, "thread_id=? AND read=0", arrayOf(threadId.toString()))
@@ -226,6 +230,7 @@ class SmsRepo(private val ctx: Context) {
     }
 
     fun markUnread(threadId: Long) {
+        if (Demo.on) return
         runCatching {
             cr.query(Telephony.Sms.CONTENT_URI, arrayOf("_id"), "thread_id=? AND type=1", arrayOf(threadId.toString()), "date DESC LIMIT 1")
                 ?.use { c ->
@@ -236,11 +241,13 @@ class SmsRepo(private val ctx: Context) {
     }
 
     fun deleteThread(threadId: Long) {
+        if (Demo.on) return
         runCatching { cr.delete(Uri.parse("content://mms-sms/conversations/$threadId"), null, null) }
         prefs.setPinned(threadId, false); prefs.setArchived(threadId, false)
     }
 
     fun deleteMessage(m: Message) {
+        if (Demo.on) return
         when {
             m.status == MsgStatus.SCHEDULED -> prefs.removeScheduled(m.id)
             m.isMms -> runCatching { cr.delete(Uri.parse("content://mms/${m.id}"), null, null) }
@@ -248,10 +255,13 @@ class SmsRepo(private val ctx: Context) {
         }
     }
 
-    fun threadIdFor(addresses: Collection<String>): Long =
-        Telephony.Threads.getOrCreateThreadId(ctx, addresses.toSet())
+    fun threadIdFor(addresses: Collection<String>): Long {
+        if (Demo.on) return Demo.conversations().firstOrNull { it.addresses.toSet() == addresses.toSet() }?.threadId ?: 9_000_999L
+        return Telephony.Threads.getOrCreateThreadId(ctx, addresses.toSet())
+    }
 
     fun insertIncomingSms(address: String, body: String, sentAt: Long, subId: Int, serviceCenter: String?): Uri? {
+        if (Demo.on) return null
         val v = ContentValues().apply {
             put(Telephony.Sms.ADDRESS, address)
             put(Telephony.Sms.BODY, body)
@@ -267,6 +277,7 @@ class SmsRepo(private val ctx: Context) {
     }
 
     fun insertOutgoingSms(address: String, body: String, subId: Int, threadId: Long): Uri? {
+        if (Demo.on) return null
         val v = ContentValues().apply {
             put(Telephony.Sms.ADDRESS, address)
             put(Telephony.Sms.BODY, body)
@@ -282,6 +293,7 @@ class SmsRepo(private val ctx: Context) {
     }
 
     fun search(query: String): List<Pair<Conversation, Message?>> {
+        if (Demo.on) return Demo.search(query)
         if (query.isBlank()) return emptyList()
         val convs = conversations()
         val byThread = convs.associateBy { it.threadId }
@@ -305,6 +317,7 @@ class SmsRepo(private val ctx: Context) {
     }
 
     fun starredMessages(): List<Pair<Conversation, Message>> {
+        if (Demo.on) return Demo.starred()
         val keys = prefs.starred()
         if (keys.isEmpty()) return emptyList()
         val convs = conversations().associateBy { it.threadId }
@@ -332,6 +345,7 @@ class SmsRepo(private val ctx: Context) {
         runCatching { BlockedNumberContract.isBlocked(ctx, number) }.getOrDefault(false)
 
     fun block(number: String) {
+        if (Demo.on) return
         runCatching {
             cr.insert(BlockedNumberContract.BlockedNumbers.CONTENT_URI,
                 ContentValues().apply { put(BlockedNumberContract.BlockedNumbers.COLUMN_ORIGINAL_NUMBER, number) })
@@ -339,10 +353,11 @@ class SmsRepo(private val ctx: Context) {
     }
 
     fun unblock(number: String) {
+        if (Demo.on) return
         runCatching { BlockedNumberContract.unblock(ctx, number) }
     }
 
-    fun blockedNumbers(): List<String> = runCatching {
+    fun blockedNumbers(): List<String> = if (Demo.on) Demo.blocked else runCatching {
         val out = ArrayList<String>()
         cr.query(BlockedNumberContract.BlockedNumbers.CONTENT_URI,
             arrayOf(BlockedNumberContract.BlockedNumbers.COLUMN_ORIGINAL_NUMBER), null, null, null)

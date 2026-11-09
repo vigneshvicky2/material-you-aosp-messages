@@ -79,6 +79,8 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
+        // Debug builds only: `--ez demo true|false` switches screenshot mode (fake data, no writes)
+        if (intent.hasExtra("demo")) com.rodin.messages.data.Demo.set(this, intent.getBooleanExtra("demo", false))
         pendingIntent.value = intent
         permLauncher.launch(
             arrayOf(

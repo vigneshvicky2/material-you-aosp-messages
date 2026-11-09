@@ -159,6 +159,7 @@ class ThreadViewModel(app: Application, val threadId: Long, initialAddresses: Li
     fun contactFor(address: String): Contact = repo.contacts.lookup(address)
 
     fun send(text: String, images: List<Uri>, subId: Int) {
+        if (com.rodin.messages.data.Demo.on) return
         val addrs = _addresses.value
         if (addrs.isEmpty() || (text.isBlank() && images.isEmpty())) return
         prefs.setDraft(threadId, "")
@@ -169,6 +170,7 @@ class ThreadViewModel(app: Application, val threadId: Long, initialAddresses: Li
     }
 
     fun schedule(text: String, time: Long, subId: Int) {
+        if (com.rodin.messages.data.Demo.on) return
         val addrs = _addresses.value
         if (addrs.isEmpty() || text.isBlank()) return
         prefs.setDraft(threadId, "")
@@ -176,6 +178,7 @@ class ThreadViewModel(app: Application, val threadId: Long, initialAddresses: Li
     }
 
     fun retry(m: Message) = viewModelScope.launch(Dispatchers.IO) {
+        if (com.rodin.messages.data.Demo.on) return@launch
         if (m.isMms) return@launch
         SmsSender.retry(getApplication(), m.id)
     }
@@ -186,6 +189,7 @@ class ThreadViewModel(app: Application, val threadId: Long, initialAddresses: Li
     }
 
     fun sendScheduledNow(m: Message) = viewModelScope.launch(Dispatchers.IO) {
+        if (com.rodin.messages.data.Demo.on) return@launch
         prefs.scheduled().firstOrNull { it.id == m.id }?.let { Scheduler.sendNow(getApplication(), it) }
     }
 
