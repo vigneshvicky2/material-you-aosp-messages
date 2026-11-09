@@ -69,7 +69,7 @@ Big two-line headers, pill search, grouped cards, a floating pill navigation bar
 2. Install it (allow installs from your browser / file manager if Android asks).
 3. Open **Messages** → tap **Set** on the banner to make it the default SMS app.
 
-Requires **Android 12 (API 31)** or newer. Developed and tested on Android 16 (AOSP-based custom ROM, Xiaomi *rodin*).
+Requires **Android 12 (API 31)** or newer. Developed and tested on Android 16 (AOSP-based custom ROM). Works on any Android 12+ device.
 Each release lists the APK's SHA-256 and the signing certificate fingerprint so you can verify the download.
 
 ---
@@ -98,7 +98,7 @@ cd material-you-aosp-messages
 # Tell Gradle where the SDK is (or open the project once in Android Studio)
 echo "sdk.dir=/path/to/Android/Sdk" > local.properties        # Windows: sdk.dir=C\:/Users/<you>/AppData/Local/Android/Sdk
 
-./gradlew assembleDebug        # app/build/outputs/apk/debug/app-debug.apk   (package com.rodin.messages.debug)
+./gradlew assembleDebug        # app/build/outputs/apk/debug/app-debug.apk   (package io.github.vigneshvicky2.messages.debug)
 ./gradlew assembleRelease      # app/build/outputs/apk/release/app-release.apk (R8-minified, ~3 MB)
 ```
 
@@ -108,7 +108,7 @@ Install on a connected device:
 adb install -r app/build/outputs/apk/debug/app-debug.apk
 ```
 
-The **debug** build uses the package `com.rodin.messages.debug`, so it installs **next to** the release app and never touches your real install. To test sending/receiving with it, make the debug app the default SMS app (Settings → Apps → Default apps → SMS).
+The **debug** build uses the package `io.github.vigneshvicky2.messages.debug`, so it installs **next to** the release app and never touches your real install. To test sending/receiving with it, make the debug app the default SMS app (Settings → Apps → Default apps → SMS).
 
 ### Command-line SDK setup (no Android Studio)
 
@@ -148,17 +148,17 @@ Fills the app with realistic made-up conversations, contacts and two SIMs, and t
 
 ```bash
 # on
-adb shell am start -n com.rodin.messages.debug/com.rodin.messages.MainActivity --ez demo true
+adb shell am start -n io.github.vigneshvicky2.messages.debug/io.github.vigneshvicky2.messages.MainActivity --ez demo true
 # off
-adb shell am start -n com.rodin.messages.debug/com.rodin.messages.MainActivity --ez demo false
+adb shell am start -n io.github.vigneshvicky2.messages.debug/io.github.vigneshvicky2.messages.MainActivity --ez demo false
 ```
 
-Sample notifications: **Settings → Notifications → Preview notifications**. Demo data lives in [`data/Demo.kt`](app/src/main/java/com/rodin/messages/data/Demo.kt). Release builds ignore the flag entirely.
+Sample notifications: **Settings → Notifications → Preview notifications**. Demo data lives in [`data/Demo.kt`](app/src/main/java/io/github/vigneshvicky2/messages/data/Demo.kt). Release builds ignore the flag entirely.
 
 ### Project structure
 
 ```
-app/src/main/java/com/rodin/messages/
+app/src/main/java/io/github/vigneshvicky2/messages/
 ├── MainActivity.kt          Navigation (Compose NavHost + shared-element transitions), intents (sms:, share), role request
 ├── BubbleActivity.kt        Compact conversation shown inside a notification bubble
 ├── MessagesApp.kt           Application: notification channels, screenshot-mode init

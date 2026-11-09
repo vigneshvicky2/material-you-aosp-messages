@@ -17,11 +17,11 @@ val signingProps = Properties().also { props ->
 }
 
 android {
-    namespace = "com.rodin.messages"
+    namespace = "io.github.vigneshvicky2.messages"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.rodin.messages"
+        applicationId = "io.github.vigneshvicky2.messages"
         minSdk = 31
         targetSdk = 36
         versionCode = 1

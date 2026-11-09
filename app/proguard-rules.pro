@@ -1,2 +1,2 @@
--keep class com.rodin.messages.sms.** { *; }
--keep class com.rodin.messages.notify.** { *; }
+-keep class io.github.vigneshvicky2.messages.sms.** { *; }
+-keep class io.github.vigneshvicky2.messages.notify.** { *; }
