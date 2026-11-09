@@ -68,7 +68,7 @@ fun SearchScreen(vm: MainViewModel, onBack: () -> Unit, onOpen: (Conversation) -
         Surface(
             shape = RoundedCornerShape(50),
             color = MaterialTheme.colorScheme.surfaceContainerHigh,
-            modifier = Modifier.statusBarsPadding().fillMaxWidth().padding(16.dp).height(64.dp).sharedKey("search"),
+            modifier = Modifier.statusBarsPadding().fillMaxWidth().padding(16.dp).height(56.dp).sharedKey("search"),
         ) {
             Row(Modifier.padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                 Surface(onClick = onBack, shape = CircleShape, color = MaterialTheme.colorScheme.surfaceContainerHigh,

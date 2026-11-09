@@ -112,7 +112,7 @@ fun NewChatScreen(vm: MainViewModel, onBack: () -> Unit, onStart: (List<String>)
             Surface(
                 shape = RoundedCornerShape(50),
                 color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp).height(64.dp),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp).height(56.dp),
             ) {
                 Row(Modifier.padding(start = 24.dp, end = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text("To", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
@@ -172,7 +172,7 @@ fun NewChatScreen(vm: MainViewModel, onBack: () -> Unit, onStart: (List<String>)
                         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
                     ) {
                         Row(Modifier.padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Box(Modifier.size(52.dp).background(MaterialTheme.colorScheme.primary, RoundedCornerShape(17.dp)),
+                            Box(Modifier.size(48.dp).background(MaterialTheme.colorScheme.primary, RoundedCornerShape(16.dp)),
                                 contentAlignment = Alignment.Center) {
                                 Icon(Icons.Rounded.Groups, null, tint = MaterialTheme.colorScheme.onPrimary)
                             }
@@ -193,7 +193,7 @@ fun NewChatScreen(vm: MainViewModel, onBack: () -> Unit, onStart: (List<String>)
                             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp).animateItem(),
                         ) {
                             Row(Modifier.padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
-                                Avatar(digits, null, size = 52.dp, highlighted = true)
+                                Avatar(digits, null, size = 48.dp, highlighted = true)
                                 Spacer(Modifier.width(18.dp))
                                 Column(Modifier.weight(1f)) {
                                     Text(if (group) "Add $digits" else "Send to $digits", style = MaterialTheme.typography.titleMedium)
@@ -220,7 +220,7 @@ fun NewChatScreen(vm: MainViewModel, onBack: () -> Unit, onStart: (List<String>)
                             ) {
                                 Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                                     Box {
-                                        Avatar(c.display, c.photoUri, size = 52.dp)
+                                        Avatar(c.display, c.photoUri, size = 48.dp)
                                         androidx.compose.animation.AnimatedVisibility(sel, Modifier.align(Alignment.BottomEnd),
                                             enter = scaleIn(spring(0.4f, 600f)), exit = scaleOut()) {
                                             Icon(Icons.Rounded.CheckCircle, null, Modifier.size(22.dp)

@@ -94,9 +94,9 @@ private fun ColorScheme.amoled() = copy(
 
 val AppTypography = Typography().let { t ->
     t.copy(
-        displaySmall = t.displaySmall.copy(fontWeight = FontWeight.Normal, fontSize = 40.sp, lineHeight = 46.sp, letterSpacing = (-0.5).sp),
+        displaySmall = t.displaySmall.copy(fontWeight = FontWeight.Normal, fontSize = 36.sp, lineHeight = 44.sp, letterSpacing = (-0.5).sp),
         headlineMedium = t.headlineMedium.copy(fontWeight = FontWeight.Normal),
-        titleMedium = t.titleMedium.copy(fontWeight = FontWeight.SemiBold, fontSize = 17.sp),
+        titleMedium = t.titleMedium.copy(fontWeight = FontWeight.SemiBold, fontSize = 16.sp),
         labelLarge = t.labelLarge.copy(fontWeight = FontWeight.SemiBold),
     )
 }

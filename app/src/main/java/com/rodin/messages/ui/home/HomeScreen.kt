@@ -185,9 +185,9 @@ fun HomeScreen(
                 item(key = "header") {
                     Column(Modifier.statusBarsPadding()) {
                         BigHeader("Messages", tabs[t].label) {
-                            CircleIconButton(Icons.Rounded.Settings, "Settings", Modifier.padding(top = 6.dp), onSettings)
+                            CircleIconButton(Icons.Rounded.Settings, "Settings", Modifier.padding(top = 10.dp), onSettings)
                         }
-                        Spacer(Modifier.height(18.dp))
+                        Spacer(Modifier.height(16.dp))
                         SearchPill("Search messages or people", Modifier.padding(horizontal = 20.dp), onSearch)
                     }
                 }
@@ -210,7 +210,7 @@ fun HomeScreen(
         StartChatFab(
             expanded = atTop,
             visible = tab != 3,
-            modifier = Modifier.align(Alignment.BottomEnd).navigationBarsPadding().padding(end = 20.dp, bottom = 104.dp),
+            modifier = Modifier.align(Alignment.BottomEnd).navigationBarsPadding().padding(end = 20.dp, bottom = 96.dp),
             onClick = onNewChat,
         )
 
@@ -258,7 +258,7 @@ private fun LazyListScope.chatsTab(
 ) {
     item(key = "chips_chats") {
         Column {
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(14.dp))
             ChipRow(ChatFilter.entries, f, { it.label },
                 badge = { if (it == ChatFilter.UNREAD) convs.count { c -> c.unreadCount > 0 && c.category == Category.PERSONAL && !c.archived } else 0 }) { setF(it) }
         }
@@ -295,7 +295,7 @@ private fun LazyListScope.updatesTab(
 ) {
     item(key = "chips_upd") {
         Column {
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(14.dp))
             ChipRow(UpdateFilter.entries, f, { it.label },
                 badge = { uf -> convs.count { it.category in uf.cats && it.unreadCount > 0 && !it.archived } }) { setF(it) }
         }
@@ -439,13 +439,13 @@ private fun PinnedRow(pinned: List<Conversation>, onOpen: (Conversation) -> Unit
                 val ring by animateColorAsState(
                     if (c.unreadCount > 0) MaterialTheme.colorScheme.primary else Color.Transparent, tween(400), label = "r")
                 Column(
-                    Modifier.width(76.dp).animateItem().clip(RoundedCornerShape(20.dp))
+                    Modifier.width(70.dp).animateItem().clip(RoundedCornerShape(20.dp))
                         .combinedClickable(onClick = { onOpen(c) }, onLongClick = { onLong(c) }).padding(vertical = 4.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Box(Modifier.border(2.5.dp, ring, RoundedCornerShape(24.dp)).padding(4.dp)) {
                         Avatar(c.title, c.contacts.first().photoUri, Modifier.sharedKey("avatar_${c.threadId}"),
-                            size = 62.dp, highlighted = c.unreadCount > 0, group = c.isGroup)
+                            size = 54.dp, highlighted = c.unreadCount > 0, group = c.isGroup)
                     }
                     Spacer(Modifier.height(6.dp))
                     Text(c.title, maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.labelMedium,
@@ -495,16 +495,16 @@ fun ConversationCard(
                 haptic.performHapticFeedback(HapticFeedbackType.LongPress); onLong()
             }),
     ) {
-        Row(Modifier.padding(horizontal = 18.dp, vertical = 16.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.padding(horizontal = 16.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
             Avatar(c.title, c.contacts.first().photoUri, Modifier.sharedKey("avatar_${c.threadId}"),
-                size = 58.dp, highlighted = unread, group = c.isGroup)
-            Spacer(Modifier.width(18.dp))
+                size = 48.dp, highlighted = unread, group = c.isGroup)
+            Spacer(Modifier.width(16.dp))
             Column(Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         c.title, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, false),
                         style = MaterialTheme.typography.titleMedium.copy(
-                            fontWeight = if (unread) FontWeight.Bold else FontWeight.SemiBold, fontSize = 18.sp),
+                            fontWeight = if (unread) FontWeight.Bold else FontWeight.SemiBold, fontSize = 16.sp),
                         color = if (c.hasError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
                     )
                     if (c.pinned) Icon(Icons.Rounded.PushPin, null, Modifier.padding(start = 6.dp).size(14.dp),
@@ -520,7 +520,7 @@ fun ConversationCard(
                         tint = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text(
                         (if (c.lastOutgoing) "You: " else "") + c.snippet.replace('\n', ' '),
-                        maxLines = 2, overflow = TextOverflow.Ellipsis,
+                        maxLines = 1, overflow = TextOverflow.Ellipsis,
                         style = MaterialTheme.typography.bodyMedium,
                         color = if (unread) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
                         fontWeight = if (unread) FontWeight.Medium else FontWeight.Normal,
@@ -546,7 +546,7 @@ fun ConversationCard(
                 Spacer(Modifier.height(8.dp))
                 AnimatedVisibility(unread, enter = scaleIn(spring(0.4f, 500f)) + fadeIn(), exit = scaleOut() + fadeOut()) {
                     Box(
-                        Modifier.widthIn(min = 24.dp).height(24.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primary)
+                        Modifier.widthIn(min = 22.dp).height(22.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primary)
                             .padding(horizontal = 7.dp),
                         contentAlignment = Alignment.Center,
                     ) {
@@ -569,9 +569,9 @@ private fun ContactCard(c: Contact, onClick: () -> Unit) {
         color = MaterialTheme.colorScheme.surfaceContainer,
         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
     ) {
-        Row(Modifier.padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
-            Avatar(c.display, c.photoUri, size = 52.dp)
-            Spacer(Modifier.width(18.dp))
+        Row(Modifier.padding(horizontal = 16.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+            Avatar(c.display, c.photoUri, size = 48.dp)
+            Spacer(Modifier.width(16.dp))
             Column(Modifier.weight(1f)) {
                 Text(c.display, style = MaterialTheme.typography.titleMedium)
                 Text(c.number, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -710,7 +710,7 @@ private fun ConversationSheet(c: Conversation, vm: MainViewModel, onDismiss: () 
 @Composable
 private fun StartChatFab(expanded: Boolean, visible: Boolean, modifier: Modifier, onClick: () -> Unit) {
     val scale by animateFloatAsState(if (visible) 1f else 0f, spring(0.55f, 400f), label = "fs")
-    val corner by animateDpAsState(if (expanded) 26.dp else 40.dp, spring(0.7f, 400f), label = "fc")
+    val corner by animateDpAsState(if (expanded) 22.dp else 32.dp, spring(0.7f, 400f), label = "fc")
     Surface(
         onClick = onClick,
         shape = RoundedCornerShape(corner),
@@ -718,8 +718,8 @@ private fun StartChatFab(expanded: Boolean, visible: Boolean, modifier: Modifier
         shadowElevation = 6.dp,
         modifier = modifier.scale(scale).sharedKey("newchat"),
     ) {
-        Row(Modifier.height(80.dp).padding(horizontal = 26.dp), verticalAlignment = Alignment.CenterVertically) {
-            Icon(Icons.AutoMirrored.Rounded.Chat, "Start chat", Modifier.size(28.dp), tint = MaterialTheme.colorScheme.onPrimaryContainer)
+        Row(Modifier.height(64.dp).padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.AutoMirrored.Rounded.Chat, "Start chat", Modifier.size(24.dp), tint = MaterialTheme.colorScheme.onPrimaryContainer)
             AnimatedVisibility(expanded, enter = expandHorizontally(spring(0.8f, 500f)) + fadeIn(),
                 exit = shrinkHorizontally(spring(0.9f, 600f)) + fadeOut()) {
                 Text("Start chat", Modifier.padding(start = 12.dp), style = MaterialTheme.typography.titleMedium,

@@ -186,7 +186,7 @@ fun Avatar(
 fun BigHeader(eyebrow: String, title: String, modifier: Modifier = Modifier, trailing: @Composable () -> Unit = {}) {
     Row(modifier.fillMaxWidth().padding(start = 24.dp, end = 16.dp, top = 8.dp), verticalAlignment = Alignment.Top) {
         Column(Modifier.weight(1f)) {
-            Text(eyebrow, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Normal),
+            Text(eyebrow, style = MaterialTheme.typography.bodyLarge.copy(fontSize = 15.sp),
                 color = MaterialTheme.colorScheme.onSurfaceVariant)
             AnimatedContent(
                 targetState = title,
@@ -212,11 +212,11 @@ fun CircleIconButton(icon: ImageVector, desc: String, modifier: Modifier = Modif
         onClick = onClick,
         shape = CircleShape,
         color = MaterialTheme.colorScheme.surfaceContainerHighest,
-        modifier = modifier.size(52.dp).scale(s),
+        modifier = modifier.size(44.dp).scale(s),
         interactionSource = src,
     ) {
         Box(contentAlignment = Alignment.Center) {
-            Icon(icon, desc, tint = MaterialTheme.colorScheme.onSurface)
+            Icon(icon, desc, Modifier.size(22.dp), tint = MaterialTheme.colorScheme.onSurface)
         }
     }
 }
@@ -229,11 +229,11 @@ fun SearchPill(hint: String, modifier: Modifier = Modifier, onClick: () -> Unit)
         onClick = onClick,
         shape = RoundedCornerShape(50),
         color = MaterialTheme.colorScheme.surfaceContainerHigh,
-        modifier = modifier.fillMaxWidth().height(64.dp).sharedKey("search"),
+        modifier = modifier.fillMaxWidth().height(56.dp).sharedKey("search"),
     ) {
-        Row(Modifier.padding(horizontal = 22.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically) {
             Icon(Icons.Rounded.Search, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-            Spacer(Modifier.width(18.dp))
+            Spacer(Modifier.width(16.dp))
             Text(hint, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyLarge)
         }
     }
@@ -261,14 +261,14 @@ fun <T> ChipRow(
                 if (sel) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surface, tween(250), label = "bg")
             val border by animateColorAsState(
                 if (sel) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.outline, tween(250), label = "bd")
-            val pad by animateDpAsState(if (sel) 20.dp else 16.dp, spring(0.6f, 500f), label = "p")
+            val pad by animateDpAsState(if (sel) 16.dp else 14.dp, spring(0.6f, 500f), label = "p")
             Row(
                 Modifier
                     .clip(RoundedCornerShape(50))
                     .background(bg)
                     .border(1.dp, border, RoundedCornerShape(50))
                     .clickable { onSelect(item) }
-                    .padding(horizontal = pad, vertical = 9.dp),
+                    .padding(horizontal = pad, vertical = 6.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(label(item), style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Medium),
@@ -294,7 +294,7 @@ fun SectionLabel(text: String, modifier: Modifier = Modifier) {
         text,
         style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
         color = MaterialTheme.colorScheme.primary,
-        modifier = modifier.padding(start = 30.dp, top = 22.dp, bottom = 10.dp),
+        modifier = modifier.padding(start = 28.dp, top = 18.dp, bottom = 8.dp),
     )
 }
 
@@ -322,7 +322,7 @@ fun PillNavBar(items: List<NavItem>, selected: Int, modifier: Modifier = Modifie
                         .clip(RoundedCornerShape(50))
                         .background(bg)
                         .clickable { onSelect(i) }
-                        .padding(horizontal = if (sel) 20.dp else 18.dp, vertical = 16.dp)
+                        .padding(horizontal = if (sel) 18.dp else 16.dp, vertical = 14.dp)
                         .animateContentSizeSpring(),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {

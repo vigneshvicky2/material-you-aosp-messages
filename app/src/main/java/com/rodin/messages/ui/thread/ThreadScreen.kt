@@ -248,7 +248,7 @@ fun ThreadScreen(
             Avatar(
                 title, firstContact.photoUri,
                 Modifier.padding(start = 4.dp).sharedKey("avatar_${vm.threadId}"),
-                size = 44.dp, highlighted = true, group = addresses.size > 1,
+                size = 40.dp, highlighted = true, group = addresses.size > 1,
             )
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
@@ -265,12 +265,12 @@ fun ThreadScreen(
             if (addresses.size == 1 && primary.any { it.isDigit() } && !Classifier.isBusinessSender(primary)) {
                 Surface(
                     onClick = { ctx.startActivity(Intent(Intent.ACTION_DIAL, Uri.parse("tel:$primary"))) },
-                    shape = CircleShape, color = MaterialTheme.colorScheme.surfaceContainerHigh, modifier = Modifier.size(46.dp),
+                    shape = CircleShape, color = MaterialTheme.colorScheme.surfaceContainerHigh, modifier = Modifier.size(42.dp),
                 ) { Box(contentAlignment = Alignment.Center) { Icon(Icons.Rounded.Call, "Call", Modifier.size(22.dp)) } }
                 Spacer(Modifier.width(6.dp))
             }
             Box {
-                Surface(onClick = { menu = true }, shape = CircleShape, color = Color.Transparent, modifier = Modifier.size(46.dp)) {
+                Surface(onClick = { menu = true }, shape = CircleShape, color = Color.Transparent, modifier = Modifier.size(42.dp)) {
                     Box(contentAlignment = Alignment.Center) { Icon(Icons.Rounded.MoreVert, "More") }
                 }
                 DropdownMenu(menu, { menu = false }, shape = RoundedCornerShape(20.dp)) {
@@ -688,20 +688,20 @@ private fun Composer(
         }
         Row(verticalAlignment = Alignment.Bottom) {
             Surface(onClick = onAttach, shape = CircleShape, color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                modifier = Modifier.size(52.dp)) {
+                modifier = Modifier.size(48.dp)) {
                 Box(contentAlignment = Alignment.Center) { Icon(Icons.Rounded.AddPhotoAlternate, "Attach image") }
             }
             Spacer(Modifier.width(8.dp))
             Surface(
                 shape = RoundedCornerShape(28.dp),
                 color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                modifier = Modifier.weight(1f).heightIn(min = 52.dp),
+                modifier = Modifier.weight(1f).heightIn(min = 48.dp),
             ) {
                 Row(Modifier.padding(start = 18.dp, end = 6.dp), verticalAlignment = Alignment.CenterVertically) {
                     BasicTextField(
                         value = text,
                         onValueChange = onText,
-                        modifier = Modifier.weight(1f).padding(vertical = 15.dp),
+                        modifier = Modifier.weight(1f).padding(vertical = 13.dp),
                         textStyle = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.onSurface),
                         cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
                         maxLines = 6,
@@ -751,7 +751,7 @@ private fun Composer(
                 val color by animateColorAsState(
                     if (canSend) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerHigh, label = "c")
                 Box(
-                    Modifier.size(52.dp).scale(scale).clip(CircleShape).background(color)
+                    Modifier.size(48.dp).scale(scale).clip(CircleShape).background(color)
                         .combinedClickable(enabled = canSend, onClick = onSend, onLongClick = onSchedule),
                     contentAlignment = Alignment.Center,
                 ) {
