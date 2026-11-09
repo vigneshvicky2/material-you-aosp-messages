@@ -125,7 +125,7 @@ class Prefs private constructor(ctx: Context) {
     private fun loadSettings(): Settings = Settings(
         theme = runCatching { ThemeMode.valueOf(sp.getString("theme", "SYSTEM")!!) }.getOrDefault(ThemeMode.SYSTEM),
         palette = runCatching { Palette.valueOf(sp.getString("palette", "DYNAMIC")!!) }.getOrDefault(Palette.DYNAMIC),
-        defaultSubId = sp.getInt("default_sub", -1),
+        defaultSubId = safeInt("default_sub", -1),
         deliveryReports = sp.getBoolean("delivery", true),
         swipeLeft = runCatching { SwipeAction.valueOf(sp.getString("swipe_l", "ARCHIVE")!!) }.getOrDefault(SwipeAction.ARCHIVE),
         swipeRight = runCatching { SwipeAction.valueOf(sp.getString("swipe_r", "READ")!!) }.getOrDefault(SwipeAction.READ),
@@ -133,7 +133,7 @@ class Prefs private constructor(ctx: Context) {
         otpAutoCopy = sp.getBoolean("otp_auto", true),
         sendOnEnter = sp.getBoolean("send_enter", false),
         bubbles = sp.getBoolean("bubbles", true),
-        textScale = sp.getFloat("text_scale", 1f),
+        textScale = safeFloat("text_scale", 1f),
     )
 
     fun update(block: (Settings) -> Settings) {
@@ -169,20 +169,38 @@ class Prefs private constructor(ctx: Context) {
     fun importJson(o: JSONObject) {
         val e = sp.edit()
         o.keys().forEach { k ->
-            when (val v = o.get(k)) {
-                is JSONArray -> e.putStringSet(k, (0 until v.length()).map { v.getString(it) }.toSet())
-                is Boolean -> e.putBoolean(k, v)
-                is Int -> e.putInt(k, v)
-                is Long -> e.putLong(k, v)
-                is Double -> e.putFloat(k, v.toFloat())
-                is String -> e.putString(k, v)
+            val v = o.get(k)
+            when {
+                // JSON has no int/float distinction ("1.0" is exported as 1), so numbers are stored by key
+                v is Number && k in FLOAT_KEYS -> e.putFloat(k, v.toFloat())
+                v is Number && k in INT_KEYS -> e.putInt(k, v.toInt())
+                v is JSONArray -> e.putStringSet(k, (0 until v.length()).map { v.getString(it) }.toSet())
+                v is Boolean -> e.putBoolean(k, v)
+                v is Int -> e.putInt(k, v)
+                v is Long -> e.putLong(k, v)
+                v is Double -> e.putFloat(k, v.toFloat())
+                v is String -> e.putString(k, v)
             }
         }
         e.apply()
         _settings.value = loadSettings(); bump()
     }
 
+    /** Reads a float that may have been stored as another number type by an older restore. */
+    private fun safeFloat(key: String, def: Float): Float = when (val v = sp.all[key]) {
+        is Number -> v.toFloat()
+        else -> def
+    }
+
+    private fun safeInt(key: String, def: Int): Int = when (val v = sp.all[key]) {
+        is Number -> v.toInt()
+        else -> def
+    }
+
     companion object {
+        private val FLOAT_KEYS = setOf("text_scale")
+        private val INT_KEYS = setOf("default_sub")
+
         @Volatile private var inst: Prefs? = null
         fun get(ctx: Context): Prefs = inst ?: synchronized(this) {
             inst ?: Prefs(ctx.applicationContext).also { inst = it }
