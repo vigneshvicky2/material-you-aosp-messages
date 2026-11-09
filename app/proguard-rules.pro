@@ -1,0 +1,2 @@
+-keep class com.rodin.messages.sms.** { *; }
+-keep class com.rodin.messages.notify.** { *; }
